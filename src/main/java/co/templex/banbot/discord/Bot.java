@@ -96,11 +96,9 @@ public class Bot {
                                 if (event.kind() == StandardWatchEventKinds.OVERFLOW) {
                                     continue;
                                 }
-                                logger.info("Detected change in file " + ((Path) event.context()).getFileName().toString());
                                 if (((Path) event.context()).endsWith("banned-players.json")) {
                                     newest = readBanList((Path) event.context());
                                     if (newest.size() > current.size()) { // Someone was banned
-                                        logger.info("Detected ban.");
                                         for (BanList.BanListEntry entry : newest) {
                                             if (!current.contains(entry)) {
                                                 reportBan(entry);
@@ -108,7 +106,6 @@ public class Bot {
                                         }
                                     }
                                     if (current.size() == newest.size()) { // Someone was pardoned
-                                        logger.info("Detected pardon.");
                                         reportPardon(readUserCache(Paths.get(path.toString(), "usercache.json")).get(0));
                                     }
                                 }
@@ -118,7 +115,6 @@ public class Bot {
                                 logger.warn("Watch key was unregistered.");
                                 break;
                             } else {
-                                logger.info("Successfully reset watch key on minecraft directory.");
                                 Thread.sleep(2000);
                             }
                         }
@@ -142,7 +138,7 @@ public class Bot {
         allstaffChannel.get().sendMessage("", generateEmbedBuilder(
                 "Ban Report",
                 String.format(
-                        "User %s (%s) was banned on %s with reason %s.",
+                        "User %s (%s) was banned on %s with reason \"%s\".",
                         entry.getName(),
                         entry.getUuid(),
                         ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT),
