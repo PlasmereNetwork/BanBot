@@ -14,6 +14,12 @@ repositories {
     }
 }
 
+jar {
+    manifest {
+        attributes 'Main-Class': 'co.templex.banbot.Main'
+    }
+}
+
 mainClassName = 'co.templex.banbot.Main'
 
 dependencies {
