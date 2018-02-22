@@ -94,6 +94,7 @@ public class Bot {
                                 if (event.kind() == StandardWatchEventKinds.OVERFLOW) {
                                     continue;
                                 }
+                                logger.info("Detected change in file " + ((Path) event.context()).getFileName().toString());
                                 if (((Path) event.context()).endsWith("banned-players.json")) {
                                     newest = readBanList((Path) event.context());
                                     if (newest.size() >= current.size()) { // Someone was banned
