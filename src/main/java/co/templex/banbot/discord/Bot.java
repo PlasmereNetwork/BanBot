@@ -33,7 +33,7 @@ public class Bot {
 
     private static final Logger logger = LoggerFactory.getLogger(Bot.class);
 
-    private final Properties botProperties = new Properties();
+    private final Properties botProperties;
     private final DiscordAPI api;
     private final AtomicReference<Channel> allstaffChannel = new AtomicReference<>(null);
     private final AtomicReference<ExecutorService> exec = new AtomicReference<>();
@@ -42,10 +42,8 @@ public class Bot {
     private final AtomicReference<Server> templexDiscord = new AtomicReference<>();
 
 
-    public Bot(String propertiesFile) throws IOException {
-        try (FileInputStream in = new FileInputStream(propertiesFile)) {
-            botProperties.load(in);
-        }
+    public Bot(Properties botProperties) throws IOException {
+        this.botProperties = botProperties;
         this.api = Javacord.getApi(botProperties.getProperty("token"), true);
     }
 

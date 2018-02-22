@@ -14,12 +14,16 @@ public class Util {
         throw new UnsupportedOperationException("Instantiation not permitted.");
     }
 
+    public static String readPathAsString(Path banlist) throws IOException {
+        return new String(Files.readAllBytes(banlist));
+    }
+
     public static BanList readBanList(Path banlist) throws IOException {
-        return gson.fromJson(new String(Files.readAllBytes(banlist)), BanList.class);
+        return gson.fromJson(readPathAsString(banlist), BanList.class);
     }
 
     public static UserCache readUserCache(Path usercache) throws IOException {
-        return gson.fromJson(new String(Files.readAllBytes(usercache)), UserCache.class);
+        return gson.fromJson(readPathAsString(usercache), UserCache.class);
     }
 
 }
