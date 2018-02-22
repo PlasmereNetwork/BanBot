@@ -14,11 +14,7 @@ repositories {
     }
 }
 
-jar {
-    manifest {
-        attributes 'Main-Class': 'co.templex.banbot.Main'
-    }
-}
+mainClassName = 'co.templex.banbot.Main'
 
 dependencies {
     compileOnly 'org.projectlombok:lombok:1.16.20'
