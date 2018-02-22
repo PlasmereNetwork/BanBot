@@ -192,7 +192,7 @@ public class Bot {
                 }
                 String player = commandSplit[1];
                 try {
-                    String executedCommand = String.format("screen -S TemplexMC -p 0 -X stuff \"%s\\n\"", command);
+                    String executedCommand = String.format("./write_to_server %s\\n", command);
                     logger.info(String.format("Executing raw command \"%s\"", executedCommand));
                     Runtime.getRuntime().exec(executedCommand);
                 } catch (IOException e) {
