@@ -120,6 +120,7 @@ public class Bot {
                                 break;
                             } else {
                                 logger.info("Successfully reset watch key on banned player list.");
+                                Thread.sleep(1000);
                             }
                         }
                     } catch (IOException | InterruptedException e) {
