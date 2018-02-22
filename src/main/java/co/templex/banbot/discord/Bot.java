@@ -192,8 +192,8 @@ public class Bot {
                 }
                 String player = commandSplit[1];
                 try {
-                    String executedCommand = String.format("screen -S TemplexMC -p 0 -X stuff '%s\n'", command);
-                    logger.info("Executing raw command " + executedCommand);
+                    String executedCommand = String.format("screen -S TemplexMC -p 0 -X stuff '%s\\n'", command);
+                    logger.info(String.format("Executing raw command \"%s\"", executedCommand));
                     Runtime.getRuntime().exec(executedCommand);
                 } catch (IOException e) {
                     logger.error("Unable to execute ban command.", e);
