@@ -34,8 +34,6 @@ public class Util {
             emb.setDescription(description);
         if (footer != null)
             emb.setFooter(footer);
-        else
-            setDefaultEmbedFooter(emb);
         if (image != null)
             emb.setImage(image);
         if (thumbnail != null)
@@ -45,13 +43,6 @@ public class Util {
         else
             emb.setColor(Color.RED);
         return emb;
-    }
-
-    public static void setDefaultEmbedFooter(EmbedBuilder emb) {
-        emb.setFooter(
-                "Templex Discord Bot | Message sent "
-                        + new SimpleDateFormat("MM/dd HH:mm:ss").format(Calendar.getInstance().getTime()),
-                "http://templex.ddns.net/assets/images/e-mail-clipart-clipart-primary-email4-2-128x128-21.png");
     }
 
 }
