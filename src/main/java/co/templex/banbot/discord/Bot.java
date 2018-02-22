@@ -1,6 +1,7 @@
 package co.templex.banbot.discord;
 
 import co.templex.banbot.minecraft.BanList;
+import co.templex.banbot.minecraft.UserCache;
 import com.google.common.util.concurrent.FutureCallback;
 import de.btobastian.javacord.DiscordAPI;
 import de.btobastian.javacord.Javacord;
@@ -26,6 +27,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static co.templex.banbot.discord.Util.generateEmbedBuilder;
 import static co.templex.banbot.minecraft.Util.readBanList;
+import static co.templex.banbot.minecraft.Util.readUserCache;
 
 public class Bot {
 
@@ -76,7 +78,7 @@ public class Bot {
                         "Templex Ban Bot version " + version + " initialized.", null, null, null, Color.GREEN);
                 allstaffChannel.get().sendMessage("", emb);
                 api.registerListener(new GeneralizedListener());
-                api.setGame("the fates of users.");
+                api.setGame("with the fates of users.");
                 watchServiceExecutor.get().submit(() -> {
                     Path path = Paths.get(System.getProperty("user.dir"));
                     BanList current, newest;
@@ -97,23 +99,17 @@ public class Bot {
                                 logger.info("Detected change in file " + ((Path) event.context()).getFileName().toString());
                                 if (((Path) event.context()).endsWith("banned-players.json")) {
                                     newest = readBanList((Path) event.context());
-                                    if (newest.size() >= current.size()) { // Someone was banned
+                                    if (newest.size() > current.size()) { // Someone was banned
                                         logger.info("Detected ban.");
                                         for (BanList.BanListEntry entry : newest) {
                                             if (!current.contains(entry)) {
                                                 reportBan(entry);
-                                                logger.info(String.format("Reported ban of user %s", entry.getName()));
                                             }
                                         }
                                     }
-                                    if (current.size() >= newest.size()) { // Someone was pardoned
+                                    if (current.size() == newest.size()) { // Someone was pardoned
                                         logger.info("Detected pardon.");
-                                        for (BanList.BanListEntry entry : current) {
-                                            if (!newest.contains(entry)) {
-                                                reportPardon(entry);
-                                                logger.info(String.format("Reported pardon of user %s", entry.getName()));
-                                            }
-                                        }
+                                        reportPardon(readUserCache(Paths.get(path.toString(), "usercache.json")).get(0));
                                     }
                                 }
                             }
@@ -122,7 +118,7 @@ public class Bot {
                                 logger.warn("Watch key was unregistered.");
                                 break;
                             } else {
-                                logger.info("Successfully reset watch key on banned player list.");
+                                logger.info("Successfully reset watch key on minecraft directory.");
                                 Thread.sleep(2000);
                             }
                         }
@@ -160,9 +156,10 @@ public class Bot {
                 null,
                 Color.RED
         ));
+        logger.info(String.format("Reported ban of user %s", entry.getName()));
     }
 
-    private void reportPardon(BanList.BanListEntry entry) {
+    private void reportPardon(UserCache.UserCacheEntry entry) {
         allstaffChannel.get().sendMessage("", generateEmbedBuilder(
                 "Pardon Report",
                 String.format(
@@ -176,6 +173,7 @@ public class Bot {
                 null,
                 Color.YELLOW
         ));
+        logger.info(String.format("Reported pardon of user %s", entry.getName()));
     }
 
     private class GeneralizedListener implements MessageCreateListener {

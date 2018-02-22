@@ -18,4 +18,8 @@ public class Util {
         return gson.fromJson(new String(Files.readAllBytes(banlist)), BanList.class);
     }
 
+    public static UserCache readUserCache(Path usercache) throws IOException {
+        return gson.fromJson(new String(Files.readAllBytes(usercache)), UserCache.class);
+    }
+
 }
