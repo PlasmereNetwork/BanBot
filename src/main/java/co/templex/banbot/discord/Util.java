@@ -4,7 +4,7 @@ import de.btobastian.javacord.entities.message.embed.EmbedBuilder;
 
 import java.awt.*;
 
-public class Util {
+class Util {
 
     private Util() {
         throw new UnsupportedOperationException("Instantiation not permitted.");

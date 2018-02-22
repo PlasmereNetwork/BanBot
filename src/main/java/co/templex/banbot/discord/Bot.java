@@ -14,8 +14,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
-import java.io.FileInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.*;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -42,7 +43,7 @@ public class Bot {
     private final AtomicReference<Server> templexDiscord = new AtomicReference<>();
 
 
-    public Bot(Properties botProperties) throws IOException {
+    public Bot(Properties botProperties) {
         this.botProperties = botProperties;
         this.api = Javacord.getApi(botProperties.getProperty("token"), true);
     }
@@ -174,7 +175,55 @@ public class Bot {
 
         @Override
         public void onMessageCreate(DiscordAPI discordAPI, Message message) {
-            // TODO
+            if (message.getChannelReceiver().getId().equals(allstaffChannel.get().getId()) && (message.getContent().startsWith(".ban ") || message.getContent().startsWith(".pardon "))) {
+                String command = message.getContent().substring(1).replaceAll("\'", "'\"'\"'");
+                String[] commandSplit = command.split(" ");
+                boolean commandType = commandSplit[0].equals("ban");
+                if (commandSplit.length < 2) { // shouldn't happen
+                    message.getChannelReceiver().sendMessage("", generateEmbedBuilder(
+                            String.format("Minecraft %s Error", commandType ? "Ban" : "Pardon"),
+                            "Insufficient arguments.",
+                            null,
+                            null,
+                            null,
+                            Color.RED
+                    ));
+                    return;
+                }
+                String player = commandSplit[1];
+                try {
+                    Runtime.getRuntime().exec(String.format("screen -S TemplexMC -X stuff '%s'", command));
+                } catch (IOException e) {
+                    logger.error("Unable to execute ban command.", e);
+                    String exception;
+                    try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                        try (PrintStream stream = new PrintStream(outputStream)) {
+                            e.printStackTrace(stream);
+                            exception = outputStream.toString();
+                        }
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                        exception = null;
+                    }
+                    message.getChannelReceiver().sendMessage("", generateEmbedBuilder(
+                            String.format("Minecraft %s Error", commandType ? "Ban" : "Pardon"),
+                            String.format("Was not able to %s %s due to process exception:\n%s", commandType ? "ban" : "pardon", player, exception),
+                            null,
+                            null,
+                            null,
+                            Color.RED
+                    ));
+                    return;
+                }
+                message.getChannelReceiver().sendMessage("", generateEmbedBuilder(
+                        String.format("Minecraft %s", commandType ? "Ban" : "Pardon"),
+                        String.format("Successfully %s %s.", commandType ? "banned" : "pardoned", player),
+                        null,
+                        null,
+                        null,
+                        Color.GREEN
+                ));
+            }
         }
 
     }
