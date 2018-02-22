@@ -176,7 +176,7 @@ public class Bot {
         @Override
         public void onMessageCreate(DiscordAPI discordAPI, Message message) {
             if (message.getChannelReceiver().getId().equals(allstaffChannel.get().getId()) && (message.getContent().startsWith(".ban ") || message.getContent().startsWith(".pardon "))) {
-                String command = message.getContent().substring(1).replaceAll("\'", "'\"'\"'");
+                String command = message.getContent().substring(1).replaceAll("\'", "\"'\"'\"");
                 String[] commandSplit = command.split(" ");
                 boolean commandType = commandSplit[0].equals("ban");
                 if (commandSplit.length < 2) { // shouldn't happen
@@ -192,7 +192,7 @@ public class Bot {
                 }
                 String player = commandSplit[1];
                 try {
-                    String executedCommand = String.format("screen -S TemplexMC -p 0 -X stuff '%s\\n'", command);
+                    String executedCommand = String.format("screen -S TemplexMC -p 0 -X stuff \"%s\\n\"", command);
                     logger.info(String.format("Executing raw command \"%s\"", executedCommand));
                     Runtime.getRuntime().exec(executedCommand);
                 } catch (IOException e) {
