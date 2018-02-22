@@ -123,7 +123,7 @@ public class Bot {
                             }
                         }
                     } catch (IOException | InterruptedException e) {
-                        e.printStackTrace();
+                        logger.error("Broke out of file update loop.", e);
                     }
                 });
                 logger.info("Templex Ban Bot version " + version + " initialized.");
