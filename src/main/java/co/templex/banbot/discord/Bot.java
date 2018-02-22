@@ -86,7 +86,7 @@ public class Bot {
                         return;
                     }
                     try (final WatchService watchService = FileSystems.getDefault().newWatchService()) {
-                        final WatchKey watchKey = path.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
+                        path.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
                         for (WatchKey wk; !watchServiceExecutor.get().isShutdown(); ) {
                             wk = watchService.take();
                             for (WatchEvent<?> event : wk.pollEvents()) {
@@ -109,9 +109,9 @@ public class Bot {
                                 }
                             }
 
-                            boolean valid = wk.reset();
-                            if (!valid) {
+                            if (!wk.reset()) {
                                 logger.warn("Watch key was unregistered.");
+                                break;
                             }
                         }
                     } catch (IOException | InterruptedException e) {
