@@ -1,7 +1,5 @@
 package co.templex.banbot.discord;
 
-import co.templex.banbot.minecraft.BanList;
-import co.templex.banbot.minecraft.UserCache;
 import com.google.common.util.concurrent.FutureCallback;
 import de.btobastian.javacord.DiscordAPI;
 import de.btobastian.javacord.Javacord;
@@ -14,9 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.*;
 import java.nio.file.*;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -26,9 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static co.templex.banbot.discord.Util.generateEmbedBuilder;
-import static co.templex.banbot.minecraft.Util.readBanList;
-import static co.templex.banbot.minecraft.Util.readUserCache;
+import static co.templex.banbot.Util.generateEmbedBuilder;
 
 public class Bot {
 
@@ -79,46 +73,58 @@ public class Bot {
                 api.registerListener(new GeneralizedListener());
                 api.setGame("with the fates of users.");
                 watchServiceExecutor.get().submit(() -> {
-                    Path path = Paths.get(System.getProperty("user.dir"));
-                    BanList current, newest;
-                    try {
-                        current = readBanList(Paths.get(path.toString(), "banned-players.json"));
-                    } catch (IOException e) {
-                        logger.error("Unable to read banlist; ban functionality will not be usable.", e);
-                        return;
-                    }
+                    Path path = Paths.get(System.getProperty("user.dir"), "logs");
+                    File latestLog = new File(path.toFile(), "latest.log");
+                    BufferedReader reader = null;
                     try (final WatchService watchService = FileSystems.getDefault().newWatchService()) {
-                        path.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_CREATE);
-                        for (WatchKey wk; !watchServiceExecutor.get().isShutdown(); ) {
+                        if (latestLog.exists()) {
+                            reader = new BufferedReader(new FileReader(latestLog));
+                            //noinspection StatementWithEmptyBody
+                            while (reader.readLine() != null);
+                        }
+                        path.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE);
+                        WatchKey wk;
+                        do {
                             wk = watchService.take();
                             for (WatchEvent<?> event : wk.pollEvents()) {
                                 if (event.kind() == StandardWatchEventKinds.OVERFLOW) {
                                     continue;
                                 }
-                                if (((Path) event.context()).endsWith("banned-players.json")) {
-                                    newest = readBanList((Path) event.context());
-                                    if (newest.size() > current.size()) { // Someone was banned
-                                        for (BanList.BanListEntry entry : newest) {
-                                            if (!current.contains(entry)) {
-                                                reportBan(entry);
-                                            }
+                                if (((Path) event.context()).endsWith("latest.log")) {
+                                    if (event.kind() == StandardWatchEventKinds.ENTRY_DELETE) {
+                                        if (reader != null) {
+                                            reader.close();
+                                            reader = null;
                                         }
+                                        continue;
                                     }
-                                    if (current.size() == newest.size()) { // Someone was pardoned
-                                        reportPardon(readUserCache(Paths.get(path.toString(), "usercache.json")).get(0));
+                                    if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE) {
+                                        reader = new BufferedReader(new FileReader(latestLog));
+                                    }
+                                    if (reader != null) {
+                                        for (String line; (line = reader.readLine()) != null; ) {
+                                            checkLineForBanlistModification(line);
+                                        }
                                     }
                                 }
                             }
 
                             if (!wk.reset()) {
                                 logger.warn("Watch key was unregistered.");
-                                break;
-                            } else {
-                                Thread.sleep(2000);
                             }
+                        } while (!watchServiceExecutor.get().isShutdown());
+                        if (reader != null) {
+                            reader.close();
                         }
                     } catch (IOException | InterruptedException e) {
                         logger.error("Broke out of file update loop.", e);
+                        if (reader != null) {
+                            try {
+                                reader.close();
+                            } catch (IOException e1) {
+                                logger.error("Failed to close buffered file reader.", e);
+                            }
+                        }
                     }
                 });
                 logger.info("Templex Ban Bot version " + version + " initialized.");
@@ -133,42 +139,59 @@ public class Bot {
         });
     }
 
-    private void reportBan(BanList.BanListEntry entry) {
+    private void checkLineForBanlistModification(String line) {
+        if (line.length() > 33) { // ex. "[03:05:13] [Server thread/INFO]: "
+            line = line.substring(33);
+            String[] splitLine = line.split(": ");
+            if (line.startsWith("Banned")) {
+                reportBan(splitLine[0].substring(7), "Server", splitLine[1]);
+            } else if (line.startsWith("Unbanned")) {
+                reportPardon(splitLine[0].substring(9), "Server");
+            } else if (line.matches("\\[.*: Banned .*:.*]")) {
+                reportBan(splitLine[1].substring(7), splitLine[0].substring(1), splitLine[2].substring(0, splitLine[2].length() - 1));
+            } else if (line.matches("\\[.*: Unbanned .*]")) {
+                reportPardon(splitLine[1].substring(9, splitLine[1].length() - 1), splitLine[0].substring(1));
+            }
+        }
+    }
+
+    private void reportBan(String banned, String banner, String reason) {
         allstaffChannel.get().sendMessage("", generateEmbedBuilder(
                 "Ban Report",
                 String.format(
-                        "User %s (%s) was banned on %s with reason \"%s\".",
-                        entry.getName(),
-                        entry.getUuid(),
+                        "User %s was banned on %s with reason \"%s\".",
+                        banned,
                         ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT),
-                        entry.getReason()
+                        reason
                 ),
                 String.format(
                         "Ban issued by %s",
-                        entry.getSource()
+                        banner
                 ),
                 null,
                 null,
                 Color.RED
         ));
-        logger.info(String.format("Reported ban of user %s", entry.getName()));
+        logger.info(String.format("Reported ban of user %s", banned));
     }
 
-    private void reportPardon(UserCache.UserCacheEntry entry) {
+    private void reportPardon(String pardoned, String pardoner) {
         allstaffChannel.get().sendMessage("", generateEmbedBuilder(
                 "Pardon Report",
                 String.format(
-                        "User %s (%s) was pardoned on %s.",
-                        entry.getName(),
-                        entry.getUuid(),
+                        "User %s was pardoned on %s.",
+                        pardoned,
                         ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT)
                 ),
-                null,
+                String.format(
+                        "Pardon issued by %s",
+                        pardoner
+                ),
                 null,
                 null,
                 Color.YELLOW
         ));
-        logger.info(String.format("Reported pardon of user %s", entry.getName()));
+        logger.info(String.format("Reported pardon of user %s", pardoned));
     }
 
     private class GeneralizedListener implements MessageCreateListener {

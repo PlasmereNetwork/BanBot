@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Properties;
 
-import static co.templex.banbot.minecraft.Util.readPathAsString;
+import static co.templex.banbot.Util.readPathAsString;
 
 public class HTTPServer extends NanoHTTPD {
 

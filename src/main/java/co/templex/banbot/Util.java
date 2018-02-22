@@ -1,10 +1,13 @@
-package co.templex.banbot.discord;
+package co.templex.banbot;
 
 import de.btobastian.javacord.entities.message.embed.EmbedBuilder;
 
 import java.awt.*;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-class Util {
+public class Util {
 
     private Util() {
         throw new UnsupportedOperationException("Instantiation not permitted.");
@@ -41,6 +44,10 @@ class Util {
         else
             emb.setColor(Color.RED);
         return emb;
+    }
+
+    public static String readPathAsString(Path banlist) throws IOException {
+        return new String(Files.readAllBytes(banlist));
     }
 
 }
