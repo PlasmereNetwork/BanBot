@@ -57,6 +57,7 @@ public class Bot {
         }
     }
 
+    @SuppressWarnings("unused")
     public boolean isReady() {
         return exec.get() != null && api != null && allstaffChannel.get() != null;
     }
@@ -86,16 +87,20 @@ public class Bot {
                         return;
                     }
                     try (final WatchService watchService = FileSystems.getDefault().newWatchService()) {
-                        path.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
+                        path.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_CREATE);
                         for (WatchKey wk; !watchServiceExecutor.get().isShutdown(); ) {
                             wk = watchService.take();
                             for (WatchEvent<?> event : wk.pollEvents()) {
+                                if (event.kind() == StandardWatchEventKinds.OVERFLOW) {
+                                    continue;
+                                }
                                 if (((Path) event.context()).endsWith("banned-players.json")) {
                                     newest = readBanList((Path) event.context());
                                     if (newest.size() >= current.size()) { // Someone was banned
                                         for (BanList.BanListEntry entry : newest) {
                                             if (!current.contains(entry)) {
                                                 reportBan(entry);
+                                                logger.info(String.format("Reported ban of user %s", entry.getName()));
                                             }
                                         }
                                     }
@@ -103,6 +108,7 @@ public class Bot {
                                         for (BanList.BanListEntry entry : current) {
                                             if (!newest.contains(entry)) {
                                                 reportPardon(entry);
+                                                logger.info(String.format("Reported pardon of user %s", entry.getName()));
                                             }
                                         }
                                     }
@@ -112,6 +118,8 @@ public class Bot {
                             if (!wk.reset()) {
                                 logger.warn("Watch key was unregistered.");
                                 break;
+                            } else {
+                                logger.info("Successfully reset watch key on banned player list.");
                             }
                         }
                     } catch (IOException | InterruptedException e) {
