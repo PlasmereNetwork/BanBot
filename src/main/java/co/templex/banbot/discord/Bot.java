@@ -97,6 +97,7 @@ public class Bot {
                                 if (((Path) event.context()).endsWith("banned-players.json")) {
                                     newest = readBanList((Path) event.context());
                                     if (newest.size() >= current.size()) { // Someone was banned
+                                        logger.info("Detected ban.");
                                         for (BanList.BanListEntry entry : newest) {
                                             if (!current.contains(entry)) {
                                                 reportBan(entry);
@@ -105,6 +106,7 @@ public class Bot {
                                         }
                                     }
                                     if (current.size() >= newest.size()) { // Someone was pardoned
+                                        logger.info("Detected pardon.");
                                         for (BanList.BanListEntry entry : current) {
                                             if (!newest.contains(entry)) {
                                                 reportPardon(entry);
@@ -120,7 +122,7 @@ public class Bot {
                                 break;
                             } else {
                                 logger.info("Successfully reset watch key on banned player list.");
-                                Thread.sleep(1000);
+                                Thread.sleep(2000);
                             }
                         }
                     } catch (IOException | InterruptedException e) {
