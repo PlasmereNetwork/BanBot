@@ -26,12 +26,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * TODO Prepare for documentation
+ * Utilities class for this library.
  */
 public class Util {
 
     /**
-     * TODO Prepare for documentation
+     * Hidden constructor. Instantiation of this class is not permitted.
      */
     private Util() {
         throw new UnsupportedOperationException("Instantiation not permitted.");
@@ -71,14 +71,14 @@ public class Util {
     }
 
     /**
-     * TODO Prepare for documentation
+     * Reads an entire file given a path instance.
      *
-     * @param banlist
-     * @return
-     * @throws IOException
+     * @param path The path of the file to read from.
+     * @return bytes All bytes of this file in UTF-8 format contained within a single string.
+     * @throws IOException If the read fails (file doesn't exist, lacks permissions, etc.)
      */
-    public static String readPathAsString(Path banlist) throws IOException {
-        return new String(Files.readAllBytes(banlist));
+    public static String readPathAsString(Path path) throws IOException {
+        return new String(Files.readAllBytes(path));
     }
 
 }

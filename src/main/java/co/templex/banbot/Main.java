@@ -27,32 +27,38 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
 
 /**
- * TODO Prepare for documentation
+ * Main class for this library. This may optionally be avoided if custom uses for the HTTP Server/Discord bot are
+ * necessary, but this library will likely be used solely as an application.
  */
 @SuppressWarnings("WeakerAccess")
 public class Main {
 
     /**
-     * TODO Prepare for documentation
+     * Logger for the Main class. This is used solely for startup errors, such as missing properties files.
      */
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     /**
-     * TODO Prepare for documentation
+     * Hidden constructor. Instantiation of this class is not permitted.
      */
     private Main() {
         throw new UnsupportedOperationException("Instantiation not permitted.");
     }
 
     /**
-     * TODO Prepare for documentation
+     * Main method for this application. This reads both of the properties files (should they exist) and passes the
+     * appropriate properties instances to the Bot and HTTP Server instantiated within this method.
+     * <p>
+     * Note that this will await the shutdown of both the bot and the http server before shutting down the JVM.
      *
-     * @param args
-     * @throws IOException
+     * @param args The command line arguments. These will be ignored.
+     * @throws IOException          If the properties files exist but are unreadable.
+     * @throws InterruptedException If the latch is interrupted at any point.
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         Properties botProperties = new Properties(), httpProperties = new Properties();
         try (FileInputStream bot = new FileInputStream("bot.properties")) {
             botProperties.load(bot);
@@ -62,10 +68,13 @@ public class Main {
         } catch (FileNotFoundException e) {
             logger.warn("Couldn't find http.properties, using defaults.", e);
         }
-        Bot bot = new Bot(botProperties);
-        bot.setup();
-        HTTPServer httpServer = new HTTPServer(httpProperties);
+        CountDownLatch shutdownLatch = new CountDownLatch(2);
+        Bot bot = new Bot(botProperties, shutdownLatch);
+        bot.start();
+        HTTPServer httpServer = new HTTPServer(httpProperties, shutdownLatch);
         httpServer.start();
+        shutdownLatch.await();
+        System.exit(0);
     }
 
 }

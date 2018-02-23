@@ -26,6 +26,7 @@ import de.btobastian.javacord.entities.Server;
 import de.btobastian.javacord.entities.message.Message;
 import de.btobastian.javacord.entities.message.embed.EmbedBuilder;
 import de.btobastian.javacord.listener.message.MessageCreateListener;
+import lombok.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,94 +37,110 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static co.templex.banbot.Util.generateEmbedBuilder;
 
 /**
- * TODO Prepare for documentation
+ * Bot class, which is instantiated to create a controller for the Discord bot located in the Templex Discord.
  */
 public class Bot {
 
     /**
-     * TODO Prepare for documentation
+     * The logger instance for all instances of Bot. This serves solely for debug purposes.
      */
     private static final Logger logger = LoggerFactory.getLogger(Bot.class);
 
     /**
-     * TODO Prepare for documentation
-     */
-    private final Properties botProperties;
-
-    /**
-     * TODO Prepare for documentation
+     * The DiscordAPI instance for this bot. Bots need one API instance per Bot instance.
      */
     private final DiscordAPI api;
 
     /**
-     * TODO Prepare for documentation
-     */
-    private final AtomicReference<Channel> allstaffChannel = new AtomicReference<>(null);
-
-    /**
-     * TODO Prepare for documentation
-     */
-    private final AtomicReference<ExecutorService> exec = new AtomicReference<>();
-
-    /**
-     * TODO Prepare for documentation
-     */
-    private final AtomicReference<ExecutorService> watchServiceExecutor = new AtomicReference<>();
-
-    /**
-     * TODO Prepare for documentation
-     */
-    private final AtomicReference<Calendar> startTime = new AtomicReference<>();
-
-    /**
-     * TODO Prepare for documentation
+     * This is the Server reference for the Templex Discord server. Note that this is held within an atomic reference
+     * for thread safety issues that may crop up later.
      */
     private final AtomicReference<Server> templexDiscord = new AtomicReference<>();
 
     /**
-     * TODO Prepare for documentation
-     *
-     * @param botProperties
+     * This is the channel which represents the "all staff" channel in Templex. Note that this is held within an atomic
+     * reference for thread safety issues that may crop up later.
      */
-    public Bot(Properties botProperties) {
-        this.botProperties = botProperties;
+    private final AtomicReference<Channel> allstaffChannel = new AtomicReference<>(null);
+
+    /**
+     * This is the executor service which handles all IO from Discord. Note that this is held within an atomic reference
+     * for thread safety issues that may crop up later.
+     */
+    private final AtomicReference<ExecutorService> exec = new AtomicReference<>();
+
+    /**
+     * This is the executor service which handles the watch service checking the logs directory of the minecraft server.
+     * Note that this is held within an atomic reference for thread safety issues that may crop up later.
+     */
+    private final AtomicReference<ExecutorService> watchServiceExecutor = new AtomicReference<>();
+
+    /**
+     * This is the calendar reference which marks the start time of the bot. Note that this is held within an atomic
+     * reference for thread safety issues that may crop up later.
+     */
+    private final AtomicReference<Calendar> startTime = new AtomicReference<>();
+
+    /**
+     * A boolean representing the shutdown state of the bot.
+     */
+    private final AtomicBoolean shutdown = new AtomicBoolean(false);
+
+    /**
+     * Shutdown latch for the Bot instance.
+     */
+    private final CountDownLatch shutdownLatch;
+
+    /**
+     * Main constructor for the Bot class. A properties instance containing a valid Discord API token called "token".
+     *
+     * @param botProperties The properties for this Bot.
+     * @param shutdownLatch The shutdown latch associated with this bot.
+     */
+    public Bot(@NonNull Properties botProperties, @NonNull CountDownLatch shutdownLatch) {
         this.api = Javacord.getApi(botProperties.getProperty("token"), true);
+        this.shutdownLatch = shutdownLatch;
     }
 
     /**
-     * TODO Prepare for documentation
+     * Shutdown method for the bot. This should always be called upon shutdown.
      */
     private void destroy() {
-        api.disconnect();
-        allstaffChannel.set(null);
-        exec.get().shutdownNow();
-        watchServiceExecutor.get().shutdownNow();
-        if (Boolean.getBoolean(botProperties.getProperty("exitOnDisconnect"))) {
-            System.exit(0);
+        if (!shutdown.getAndSet(true)) {
+            logger.info("Shutting down...");
+            api.disconnect();
+            allstaffChannel.set(null);
+            exec.get().shutdownNow();
+            watchServiceExecutor.get().shutdownNow();
+            shutdownLatch.countDown();
         }
     }
 
     /**
-     * TODO Prepare for documentation
+     * Returns the ready state of the bot. This isn't used by our Main, but may be by others.
      *
-     * @return
+     * @return ready The ready state of the bot.
      */
     @SuppressWarnings("unused")
     public boolean isReady() {
-        return exec.get() != null && api != null && allstaffChannel.get() != null;
+        return !shutdown.get() && exec.get() != null && api != null && allstaffChannel.get() != null;
     }
 
     /**
-     * TODO Prepare for documentation
+     * Establishes and runs the bot, adding hooks into appropriate listeners. Note that there is quite a lot of
+     * background threading that occurs when the API is established successfully.
      */
-    public void setup() {
+    public void start() {
+        Runtime.getRuntime().addShutdownHook(new Thread(this::destroy)); // trap for shutdown
         exec.set(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
         watchServiceExecutor.set(Executors.newSingleThreadExecutor());
         startTime.set(Calendar.getInstance());
@@ -198,7 +215,7 @@ public class Bot {
 
             @Override
             public void onFailure(Throwable t) {
-                logger.error("Failed to setup the bot!", t);
+                logger.error("Failed to start the bot!", t);
                 destroy();
             }
 
@@ -206,9 +223,10 @@ public class Bot {
     }
 
     /**
-     * TODO Prepare for documentation
+     * Checks the line passed for a banlist modification. If the line matches the result of a /ban or /pardon
+     * execution, it will report so to the appropriate location.
      *
-     * @param line
+     * @param line The line to check against.
      */
     private void checkLineForBanlistModification(String line) {
         if (line.length() > 33) { // ex. "[03:05:13] [Server thread/INFO]: "
@@ -227,11 +245,13 @@ public class Bot {
     }
 
     /**
-     * TODO Prepare for documentation
+     * Reports a ban to the target server.
+     * <p>
+     * Note that this will very likely change locations during the refactoring process.
      *
-     * @param banned
-     * @param banner
-     * @param reason
+     * @param banned The banned user.
+     * @param banner The banning user.
+     * @param reason The reason for the ban.
      */
     private void reportBan(String banned, String banner, String reason) {
         allstaffChannel.get().sendMessage("", generateEmbedBuilder(
@@ -254,10 +274,12 @@ public class Bot {
     }
 
     /**
-     * TODO Prepare for documentation
+     * Reports a pardon to the target server.
+     * <p>
+     * Note that this will very likely change locations during the refactoring process.
      *
-     * @param pardoned
-     * @param pardoner
+     * @param pardoned The pardoned user.
+     * @param pardoner The pardoning user.
      */
     private void reportPardon(String pardoned, String pardoner) {
         allstaffChannel.get().sendMessage("", generateEmbedBuilder(
@@ -279,15 +301,21 @@ public class Bot {
     }
 
     /**
-     * TODO Prepare for documentation
+     * Listener implementation used by the Discord bot. This hooks into the MessageCreateListener for the Discord API.
+     * <p>
+     * This particular implementation listens for the .ban or .pardon commands in the channel designated for in-discord
+     * banning.
+     * <p>
+     * Note that this will very likely change locations during the refactoring process.
      */
     private class GeneralizedListener implements MessageCreateListener {
 
         /**
-         * TODO Prepare for documentation
+         * Implementation of the MessageCreateListener#onMessageCreate method. This particular implementation listens
+         * for the .ban or .pardon commands in the channel designated for in-discord banning.
          *
-         * @param discordAPI
-         * @param message
+         * @param discordAPI The Discord API instance associated with this event.
+         * @param message    The message associated with this event.
          */
         @Override
         public void onMessageCreate(DiscordAPI discordAPI, Message message) {
