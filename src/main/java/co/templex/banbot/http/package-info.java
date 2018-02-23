@@ -16,6 +16,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 /**
- * Topmost package for the banbot project. Contains Main and shared utilities classes.
+ * HTTP-related operations package. The HTTP Server and all affiliated operations classes are here.
  */
-package co.templex.banbot;
+package co.templex.banbot.http;

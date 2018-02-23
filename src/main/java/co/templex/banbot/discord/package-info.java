@@ -16,6 +16,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 /**
- * Topmost package for the banbot project. Contains Main and shared utilities classes.
+ * Discord-related operations package. The Discord Bot and all affiliated operations classes are here.
  */
-package co.templex.banbot;
+package co.templex.banbot.discord;
