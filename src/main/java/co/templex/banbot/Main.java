@@ -28,14 +28,30 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
 
+/**
+ * TODO Prepare for documentation
+ */
+@SuppressWarnings("WeakerAccess")
 public class Main {
 
+    /**
+     * TODO Prepare for documentation
+     */
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
+    /**
+     * TODO Prepare for documentation
+     */
     private Main() {
         throw new UnsupportedOperationException("Instantiation not permitted.");
     }
 
+    /**
+     * TODO Prepare for documentation
+     *
+     * @param args
+     * @throws IOException
+     */
     public static void main(String[] args) throws IOException {
         Properties botProperties = new Properties(), httpProperties = new Properties();
         try (FileInputStream bot = new FileInputStream("bot.properties")) {

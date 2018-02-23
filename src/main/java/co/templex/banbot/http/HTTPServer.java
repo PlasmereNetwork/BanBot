@@ -28,19 +28,41 @@ import java.util.Properties;
 
 import static co.templex.banbot.Util.readPathAsString;
 
+/**
+ * TODO Prepare for documentation
+ */
 public class HTTPServer extends NanoHTTPD {
 
+    /**
+     * TODO Prepare for documentation
+     */
     private static final Logger logger = LoggerFactory.getLogger(HTTPServer.class);
 
+    /**
+     * TODO Prepare for documentation
+     *
+     * @param properties
+     */
     public HTTPServer(Properties properties) {
         super(properties.getProperty("host", "0.0.0.0"), Integer.parseInt(properties.getProperty("port", "8080")));
     }
 
+    /**
+     * TODO Prepare for documentation
+     *
+     * @throws IOException
+     */
     public void start() throws IOException {
         start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
         logger.info("HTTP Server initialized and started.");
     }
 
+    /**
+     * TODO Prepare for documentation
+     *
+     * @param session
+     * @return
+     */
     @Override
     public Response serve(IHTTPSession session) {
         Response response;

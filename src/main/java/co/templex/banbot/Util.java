@@ -25,8 +25,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+/**
+ * TODO Prepare for documentation
+ */
 public class Util {
 
+    /**
+     * TODO Prepare for documentation
+     */
     private Util() {
         throw new UnsupportedOperationException("Instantiation not permitted.");
     }
@@ -64,6 +70,13 @@ public class Util {
         return emb;
     }
 
+    /**
+     * TODO Prepare for documentation
+     *
+     * @param banlist
+     * @return
+     * @throws IOException
+     */
     public static String readPathAsString(Path banlist) throws IOException {
         return new String(Files.readAllBytes(banlist));
     }

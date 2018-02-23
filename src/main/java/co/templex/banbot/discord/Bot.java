@@ -42,24 +42,64 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static co.templex.banbot.Util.generateEmbedBuilder;
 
+/**
+ * TODO Prepare for documentation
+ */
 public class Bot {
 
+    /**
+     * TODO Prepare for documentation
+     */
     private static final Logger logger = LoggerFactory.getLogger(Bot.class);
 
+    /**
+     * TODO Prepare for documentation
+     */
     private final Properties botProperties;
+
+    /**
+     * TODO Prepare for documentation
+     */
     private final DiscordAPI api;
+
+    /**
+     * TODO Prepare for documentation
+     */
     private final AtomicReference<Channel> allstaffChannel = new AtomicReference<>(null);
+
+    /**
+     * TODO Prepare for documentation
+     */
     private final AtomicReference<ExecutorService> exec = new AtomicReference<>();
+
+    /**
+     * TODO Prepare for documentation
+     */
     private final AtomicReference<ExecutorService> watchServiceExecutor = new AtomicReference<>();
+
+    /**
+     * TODO Prepare for documentation
+     */
     private final AtomicReference<Calendar> startTime = new AtomicReference<>();
+
+    /**
+     * TODO Prepare for documentation
+     */
     private final AtomicReference<Server> templexDiscord = new AtomicReference<>();
 
-
+    /**
+     * TODO Prepare for documentation
+     *
+     * @param botProperties
+     */
     public Bot(Properties botProperties) {
         this.botProperties = botProperties;
         this.api = Javacord.getApi(botProperties.getProperty("token"), true);
     }
 
+    /**
+     * TODO Prepare for documentation
+     */
     private void destroy() {
         api.disconnect();
         allstaffChannel.set(null);
@@ -70,11 +110,19 @@ public class Bot {
         }
     }
 
+    /**
+     * TODO Prepare for documentation
+     *
+     * @return
+     */
     @SuppressWarnings("unused")
     public boolean isReady() {
         return exec.get() != null && api != null && allstaffChannel.get() != null;
     }
 
+    /**
+     * TODO Prepare for documentation
+     */
     public void setup() {
         exec.set(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
         watchServiceExecutor.set(Executors.newSingleThreadExecutor());
@@ -157,6 +205,11 @@ public class Bot {
         });
     }
 
+    /**
+     * TODO Prepare for documentation
+     *
+     * @param line
+     */
     private void checkLineForBanlistModification(String line) {
         if (line.length() > 33) { // ex. "[03:05:13] [Server thread/INFO]: "
             line = line.substring(33);
@@ -173,6 +226,13 @@ public class Bot {
         }
     }
 
+    /**
+     * TODO Prepare for documentation
+     *
+     * @param banned
+     * @param banner
+     * @param reason
+     */
     private void reportBan(String banned, String banner, String reason) {
         allstaffChannel.get().sendMessage("", generateEmbedBuilder(
                 "Ban Report",
@@ -193,6 +253,12 @@ public class Bot {
         logger.info(String.format("Reported ban of user %s", banned));
     }
 
+    /**
+     * TODO Prepare for documentation
+     *
+     * @param pardoned
+     * @param pardoner
+     */
     private void reportPardon(String pardoned, String pardoner) {
         allstaffChannel.get().sendMessage("", generateEmbedBuilder(
                 "Pardon Report",
@@ -212,8 +278,17 @@ public class Bot {
         logger.info(String.format("Reported pardon of user %s", pardoned));
     }
 
+    /**
+     * TODO Prepare for documentation
+     */
     private class GeneralizedListener implements MessageCreateListener {
 
+        /**
+         * TODO Prepare for documentation
+         *
+         * @param discordAPI
+         * @param message
+         */
         @Override
         public void onMessageCreate(DiscordAPI discordAPI, Message message) {
             if (message.getChannelReceiver().getId().equals(allstaffChannel.get().getId()) && (message.getContent().startsWith(".ban ") || message.getContent().startsWith(".pardon "))) {

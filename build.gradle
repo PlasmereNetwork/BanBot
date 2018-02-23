@@ -34,7 +34,7 @@ repositories {
 
 jar {
     manifest {
-        attributes (
+        attributes(
                 'Main-Class': 'co.templex.banbot.Main',
                 'Implementation-Title': 'Templex BanBot',
                 'Implementation-Version': version
