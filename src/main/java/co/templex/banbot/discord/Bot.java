@@ -154,8 +154,8 @@ public class Bot {
         api.connect(new FutureCallback<DiscordAPI>() {
             @Override
             public void onSuccess(DiscordAPI result) {
-                targetServer.set(api.getServerById(targetServerID)); // TODO generify
-                targetChannel.set(api.getChannelById(targetChannelID)); // TODO generify
+                targetServer.set(api.getServerById(targetServerID));
+                targetChannel.set(api.getChannelById(targetChannelID));
                 String version = Bot.this.getClass().getPackage().getImplementationVersion();
                 EmbedBuilder emb = generateEmbedBuilder("Templex Ban Bot",
                         "Templex Ban Bot version " + version + " initialized.", null, null, null, Color.GREEN);

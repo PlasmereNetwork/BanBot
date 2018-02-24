@@ -43,12 +43,12 @@ import static co.templex.banbot.Util.generateEmbedBuilder;
 class CommandListener implements MessageCreateListener {
 
     /**
-     * TODO Document
+     * The logger instance for all instances of CommandListener. This serves solely for debug purposes.
      */
     private static final Logger logger = LoggerFactory.getLogger(CommandListener.class);
 
     /**
-     * TODO Document
+     * The channel which we are reading from.
      */
     private final Channel channel;
 

@@ -18,6 +18,7 @@
 
 package co.templex.banbot.discord;
 
+import lombok.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,49 +31,49 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * TODO Document
+ * LogWatcher class. Instances of this class will watch minecraft log files continuously until shutdown.
  */
 public class LogWatcher implements Runnable {
 
     /**
-     * TODO Document
+     * The logger instance for all instances of LogWatcher. This serves solely for debug purposes.
      */
     private static final Logger logger = LoggerFactory.getLogger(LogWatcher.class);
 
     /**
-     * TODO Document
+     * The bot instance to which this log reports.
      */
     private final Bot bot;
 
     /**
-     * TODO Document
+     * The single-threaded executor on which this watcher watches.
      */
     private final ExecutorService watchServiceExecutor;
 
     /**
-     * TODO Document
+     * Main constructor. A bot instance must be passed in order for reporting to be valid.
      */
-    LogWatcher(Bot bot) {
+    LogWatcher(@NonNull Bot bot) {
         this.bot = bot;
         this.watchServiceExecutor = Executors.newSingleThreadExecutor();
     }
 
     /**
-     * TODO Document
+     * Shuts down the watcher and its internal threads.
      */
     public void shutdown() {
         watchServiceExecutor.shutdownNow();
     }
 
     /**
-     * TODO Document
+     * Initiates the watcher.
      */
     public void watch() {
         watchServiceExecutor.submit(this);
     }
 
     /**
-     * TODO Document
+     * Main watcher instructions. A buffered reader updates to ensure that the bottom of the log is always watched.
      */
     @Override
     public void run() {
@@ -82,8 +83,7 @@ public class LogWatcher implements Runnable {
         try (final WatchService watchService = FileSystems.getDefault().newWatchService()) {
             if (latestLog.exists()) {
                 reader = new BufferedReader(new FileReader(latestLog));
-                //noinspection StatementWithEmptyBody
-                while (reader.readLine() != null) ;
+                discardUntilEnd(reader);
             }
             path.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE);
             WatchKey wk;
@@ -129,6 +129,17 @@ public class LogWatcher implements Runnable {
                 }
             }
         }
+    }
+
+    /**
+     * Helper method to discard all previous entries (server is mid-execution, bot is just starting execution).
+     *
+     * @param reader Reader to discard all previous entries from.
+     * @throws IOException If there is an error in the reader.
+     */
+    private void discardUntilEnd(BufferedReader reader) throws IOException {
+        //noinspection StatementWithEmptyBody
+        while (reader.readLine() != null) ;
     }
 
     /**
