@@ -36,7 +36,7 @@ jar {
     manifest {
         attributes(
                 'Main-Class': 'co.templex.banbot.Main',
-                'Implementation-Title': 'Templex BanBot',
+                'Implementation-Title': 'Templex Ban Bot',
                 'Implementation-Version': version
         )
     }
