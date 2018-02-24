@@ -32,6 +32,7 @@ import java.awt.*;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -75,6 +76,16 @@ public class Bot {
     private final AtomicReference<ExecutorService> exec = new AtomicReference<>();
 
     /**
+     * TODO Document
+     */
+    private final String targetServerID;
+
+    /**
+     * TODO Document
+     */
+    private final String targetChannelID;
+
+    /**
      * This is the log watcher instance which watches the specified logfile.
      */
     private LogWatcher logWatcher;
@@ -102,8 +113,10 @@ public class Bot {
      * @param shutdownLatch The shutdown latch associated with this bot.
      */
     public Bot(@NonNull Properties botProperties, @NonNull CountDownLatch shutdownLatch) {
-        this.api = Javacord.getApi(botProperties.getProperty("token"), true);
         this.shutdownLatch = shutdownLatch;
+        this.api = Javacord.getApi(botProperties.getProperty("token"), true);
+        this.targetServerID = Objects.requireNonNull(botProperties.getProperty("server-id", null));
+        this.targetChannelID = Objects.requireNonNull(botProperties.getProperty("channel-id", null));
     }
 
     /**
@@ -141,8 +154,8 @@ public class Bot {
         api.connect(new FutureCallback<DiscordAPI>() {
             @Override
             public void onSuccess(DiscordAPI result) {
-                targetServer.set(api.getServerById("162683952295837696")); // TODO generify
-                targetChannel.set(api.getChannelById("162685956913233921")); // TODO generify
+                targetServer.set(api.getServerById(targetServerID)); // TODO generify
+                targetChannel.set(api.getChannelById(targetChannelID)); // TODO generify
                 String version = Bot.this.getClass().getPackage().getImplementationVersion();
                 EmbedBuilder emb = generateEmbedBuilder("Templex Ban Bot",
                         "Templex Ban Bot version " + version + " initialized.", null, null, null, Color.GREEN);
