@@ -154,11 +154,21 @@ public class LogWatcher implements Runnable {
             line = line.substring(33);
             String[] splitLine = line.split(": ");
             if (line.startsWith("Banned")) {
-                bot.reportBan(splitLine[0].substring(7), "Server", splitLine[1]);
+                StringBuilder reason = new StringBuilder(splitLine[1]);
+                for (int i = 2; i < splitLine.length; i++) {
+                    reason.append(": ");
+                    reason.append(splitLine[i]);
+                }
+                bot.reportBan(splitLine[0].substring(7), "Server", reason.toString());
             } else if (line.startsWith("Unbanned")) {
                 bot.reportPardon(splitLine[0].substring(9), "Server");
             } else if (line.matches("\\[.*: Banned .*:.*]")) {
-                bot.reportBan(splitLine[1].substring(7), splitLine[0].substring(1), splitLine[2].substring(0, splitLine[2].length() - 1));
+                StringBuilder reason = new StringBuilder(splitLine[1]);
+                for (int i = 2; i < splitLine.length; i++) {
+                    reason.append(": ");
+                    reason.append(splitLine[i]);
+                }
+                bot.reportBan(splitLine[1].substring(7), splitLine[0].substring(1), reason.substring(0, reason.length() - 1));
             } else if (line.matches("\\[.*: Unbanned .*]")) {
                 bot.reportPardon(splitLine[1].substring(9, splitLine[1].length() - 1), splitLine[0].substring(1));
             }
