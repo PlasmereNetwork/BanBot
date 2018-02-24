@@ -29,6 +29,7 @@ import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.concurrent.TimeUnit;
 
 import static co.templex.banbot.Util.generateEmbedBuilder;
 
@@ -48,12 +49,28 @@ class CommandListener implements MessageCreateListener {
     private static final Logger logger = LoggerFactory.getLogger(CommandListener.class);
 
     /**
+     * Standardized deletion delay for self-deleting messages created by this listener.
+     */
+    private static final int SELF_DELETION_DELAY = 10;
+
+    /**
      * The channel which we are reading from.
      */
     private final Channel channel;
 
+    /**
+     * The message handler created for this listener.
+     */
+    private final MessageHandler messageHandler;
+
+    /**
+     * The main constructor for the CommandListener class. Requires a channel to listen/write to.
+     *
+     * @param channel The channel to listen/write to.
+     */
     CommandListener(Channel channel) {
         this.channel = channel;
+        messageHandler = new MessageHandler();
     }
 
     /**
@@ -66,18 +83,19 @@ class CommandListener implements MessageCreateListener {
     @Override
     public void onMessageCreate(DiscordAPI discordAPI, Message message) {
         if (message.getChannelReceiver().getId().equals(channel.getId()) && (message.getContent().startsWith(".ban ") || message.getContent().startsWith(".pardon "))) {
+            messageHandler.deleteMessage(message, 5, TimeUnit.SECONDS);
             String command = message.getContent().substring(1).replaceAll("\'", "\"'\"'\"");
             String[] commandSplit = command.split(" ");
             boolean commandType = commandSplit[0].equals("ban");
             if (commandSplit.length < 2) { // shouldn't happen
-                message.getChannelReceiver().sendMessage("", generateEmbedBuilder(
+                messageHandler.sendSelfDeletingMessage(message.getChannelReceiver(), generateEmbedBuilder(
                         String.format("Minecraft %s Error", commandType ? "Ban" : "Pardon"),
                         "Insufficient arguments.",
                         null,
                         null,
                         null,
                         Color.RED
-                ));
+                ), SELF_DELETION_DELAY, TimeUnit.SECONDS);
                 return;
             }
             String player = commandSplit[1];
@@ -97,24 +115,24 @@ class CommandListener implements MessageCreateListener {
                     e1.printStackTrace();
                     exception = null;
                 }
-                message.getChannelReceiver().sendMessage("", generateEmbedBuilder(
+                messageHandler.sendSelfDeletingMessage(message.getChannelReceiver(), generateEmbedBuilder(
                         String.format("Minecraft %s Error", commandType ? "Ban" : "Pardon"),
                         String.format("Was not able to %s %s due to process exception:\n%s", commandType ? "ban" : "pardon", player, exception),
                         null,
                         null,
                         null,
                         Color.RED
-                ));
+                ), SELF_DELETION_DELAY, TimeUnit.SECONDS);
                 return;
             }
-            message.getChannelReceiver().sendMessage("", generateEmbedBuilder(
+            messageHandler.sendSelfDeletingMessage(message.getChannelReceiver(), generateEmbedBuilder(
                     String.format("Minecraft %s", commandType ? "Ban" : "Pardon"),
                     String.format("Successfully %s %s.", commandType ? "banned" : "pardoned", player),
                     null,
                     null,
                     null,
                     Color.GREEN
-            ));
+            ), SELF_DELETION_DELAY, TimeUnit.SECONDS);
         }
     }
 }
