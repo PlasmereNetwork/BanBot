@@ -52,6 +52,7 @@ public class LogWatcher implements Runnable {
 
     /**
      * Main constructor. A bot instance must be passed in order for reporting to be valid.
+     * @param bot The bot instance which this log watcher refers to.
      */
     LogWatcher(@NonNull Bot bot) {
         this.bot = bot;
