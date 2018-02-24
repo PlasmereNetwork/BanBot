@@ -130,6 +130,7 @@ public class Bot {
             exec.get().shutdownNow();
             logWatcher.shutdown();
             shutdownLatch.countDown();
+            logger.info("Successfully shut down.");
         }
     }
 

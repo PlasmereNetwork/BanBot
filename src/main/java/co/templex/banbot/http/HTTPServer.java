@@ -86,10 +86,12 @@ public class HTTPServer extends NanoHTTPD {
      */
     @Override
     public void stop() {
+        logger.info("Shutting down...");
         if (!shutdown.getAndSet(true)) {
             super.stop();
             shutdownLatch.countDown();
         }
+        logger.info("Successfully shut down.");
     }
 
     /**
