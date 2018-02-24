@@ -74,7 +74,6 @@ public class Main {
         HTTPServer httpServer = new HTTPServer(httpProperties, shutdownLatch);
         httpServer.start();
         shutdownLatch.await();
-        System.exit(0);
     }
 
 }
