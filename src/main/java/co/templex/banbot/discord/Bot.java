@@ -76,12 +76,12 @@ public class Bot {
     private final AtomicReference<ExecutorService> exec = new AtomicReference<>();
 
     /**
-     * TODO Document
+     * The ID of the server that we wish to monitor.
      */
     private final String targetServerID;
 
     /**
-     * TODO Document
+     * The ID of the server that we wish to listen/write to.
      */
     private final String targetChannelID;
 
